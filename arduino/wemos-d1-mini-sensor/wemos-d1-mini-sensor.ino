@@ -1,59 +1,26 @@
-#include <WiFiManager.h>
+// This is a more simplified version that I'm programming so taht I can start working on the Flask API
 #include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
 
 int pirPin = D7;
 int val;
 int trigger;
-int chipID;
 
-WiFiManager wm; //global wm instance
-WiFiManagerParameter server_ip; // global param (for non blocking w params)
-WiFiManagerParameter scene_name; // global param (for non blocking w params) 
+
+
 void setup()
 {
-  WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STAP+AP
   Serial.begin(9600); // serial for debug
-  
-  //reset settings - wipe creds for testing
-  //wm.resetSettings();
+  WiFi.begin("yourSSID", "yourPass"); //your wifi credentials go here
 
-  //TODO: we need to check is params are set already before configuring params... these are not saving after reset
-  new (&server_ip) WiFiManagerParameter("serverip", "Server IP Address", "", 15,"placeholder=\"0.0.0.0\"");
-  new (&scene_name) WiFiManagerParameter("scenename", "OBS Scene Name", "", 60,"placeholder=\"Scene1\"");;
-  wm.addParameter(&server_ip);
-  wm.addParameter(&scene_name);
-  
-  wm.setSaveParamsCallback(saveParamCallback);
+  while (WiFi.status() != WL_CONNECTED) { //Wait for wifi to connect
 
-  wm.setClass("invert"); //darkmode plz
-  
-  bool res;
-  res = wm.autoConnect("DRWN", "administrator");
-
-  if(!res) {
-    Serial.println("Failed to connect");
-  }
-  else {
-    Serial.println("Connected to WiFi");
+    delay(500);
+    Serial.println("Waiting for connection");
   }
 
   // Limit call rate by creating a variable so that we only trigger when sensor remains activated (vs. calling everytime the loop occurs)
   trigger = true;
-}
-
-String getParam(String name){
-  //read parameter from server, for customhmtl input
-  String value;
-  if(wm.server->hasArg(name)) {
-    value = wm.server->arg(name);
-  }
-  return value;
-}
-
-void saveParamCallback(){
-  Serial.println("[CALLBACK] saveParamCallback fired");
-  Serial.println("PARAM serverip = " + getParam("serverip"));
-  Serial.println("PARAM scenename = " + getParam("scenename"));
 }
  
 void loop()
@@ -62,15 +29,24 @@ val = digitalRead(pirPin);
 //low = object, high =  no object
 if (val == LOW)
 {
-  if (trigger == false) // If the object wasn't in front of the sensor the last time the loop ran
-  {
-    Serial.println( scene_name.getValue() );
-    Serial.println( server_ip.getValue() );
-    
+  if (trigger == false) { // If the object wasn't in front of the sensor the last time the loop ran
+       
     trigger = true; //object is now in front of the sensor
-  }
-  else
-  {
+
+    if (WiFi.status() == WL_CONNECTED) { //check Wifi connection status
+     HTTPClient http;
+     http.begin("http://10.0.13.132:8068/scene1"); // this is where you put your scene name. make sure scenes in OBS have no spaces. i.e., http://yourip:8068/sceneName
+     int httpCode = http.GET();
+     if (httpCode > 0) {
+      String payload = http.getString();
+      Serial.println(payload);  
+     }
+     http.end();
+    } else {
+      Serial.println("Error in WiFi connection, reconfigure firmware");
+    }
+    
+  } else {
     trigger = true; //object is 'still' in front of the sensor
   }
 }

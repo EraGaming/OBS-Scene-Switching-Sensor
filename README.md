@@ -1,4 +1,4 @@
-# OBS-Scene-Sensor (OBSSS)
+# OBS-Scene-Switching-Sensor (OBSSSS)
 an ESP8266 ultrasonic sensor project that changes OBS Scenes when you get close to a sensor, uses flask python api and OBS Websocket Python api libraries.
 
 ## How Does It Work?

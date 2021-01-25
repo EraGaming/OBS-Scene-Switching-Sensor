@@ -35,7 +35,7 @@ if (val == LOW)
 
     if (WiFi.status() == WL_CONNECTED) { //check Wifi connection status
      HTTPClient http;
-     http.begin("http://10.0.13.132:8068/scene1"); // this is where you put your scene name. make sure scenes in OBS have no spaces. i.e., http://yourip:8068/sceneName
+     http.begin("http://serverip:5000/Scene%201"); // this is where you put your scene name. make sure scenes in OBS have no spaces. i.e., http://yourip:5000/sceneName
      int httpCode = http.GET();
      if (httpCode > 0) {
       String payload = http.getString();
